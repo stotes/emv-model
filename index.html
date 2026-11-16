@@ -1,0 +1,303 @@
+<title>EMV Revenue Model</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@500;600&display=swap">
+<style>
+/* Layout: one column, controls stacked under a summary + chart + table; scenario switch at top. Clinical instrument feel. */
+:root{
+  --bg:#f5f7f8; --panel:#ffffff; --fg:#14202a; --muted:#5a6b78; --line:#dde4e8;
+  --accent:#0b6e8a; --accent-ink:#ffffff;
+  --c-cap:#0b6e8a; --c-svc:#5a9fb3; --c-con:#d08a2c; --c-fr:#7a5ba8; --c-sw:#3d8c5c;
+  --disc:#e3f1f5; --disc-ink:#0b5a70; --asm:#fbf0e0; --asm-ink:#8a5310;
+  --display:"Sora",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f161b; --panel:#162028; --fg:#e4ecf0; --muted:#93a5b1; --line:#26343e;
+  --accent:#4cb3cf; --accent-ink:#06222b;
+  --c-cap:#4cb3cf; --c-svc:#2f7d93; --c-con:#e2a24c; --c-fr:#a88ad6; --c-sw:#62b585;
+  --disc:#123341; --disc-ink:#9fd7e6; --asm:#3a2a12; --asm-ink:#f0c27f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f161b; --panel:#162028; --fg:#e4ecf0; --muted:#93a5b1; --line:#26343e;
+  --accent:#4cb3cf; --accent-ink:#06222b;
+  --c-cap:#4cb3cf; --c-svc:#2f7d93; --c-con:#e2a24c; --c-fr:#a88ad6; --c-sw:#62b585;
+  --disc:#123341; --disc-ink:#9fd7e6; --asm:#3a2a12; --asm-ink:#f0c27f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:22px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(26px,4vw,36px);margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-family:var(--display);font-weight:500;font-size:18px;margin:0}
+.lede{color:var(--muted);max-width:68ch;margin:0}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{font:500 14px var(--body);padding:8px 18px;border:0;background:transparent;color:var(--fg);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button:focus-visible,.ghost:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ghost{font:500 13px var(--body);padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
+.legend-key{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend-key span{display:inline-flex;align-items:center;gap:6px}
+.chip{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;padding:2px 6px;border-radius:4px;text-transform:uppercase}
+.chip.d{background:var(--disc);color:var(--disc-ink)} .chip.a{background:var(--asm);color:var(--asm-ink)}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:2px}
+.tile .k{font-size:12.5px;color:var(--muted)}
+.tile .v{font-family:var(--display);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.tile .s{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:14px;min-width:0}
+.chartwrap{overflow-x:auto}
+svg text{font-family:var(--mono);font-size:11px;fill:var(--muted)}
+.sw{width:10px;height:10px;border-radius:2px;display:inline-block}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13.5px;min-width:880px}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{font-family:var(--mono);font-weight:500;font-size:12px;color:var(--muted)}
+tr.sub td{color:var(--muted);font-size:12.5px}
+tr.total td{font-weight:600;border-top:1px solid var(--fg)}
+tr.grp td{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:14px}
+.inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+fieldset{border:1px solid var(--line);border-radius:12px;padding:14px 16px 16px;margin:0;background:var(--panel);display:grid;gap:10px;min-width:0}
+legend{font-family:var(--display);font-weight:500;font-size:15px;padding:0 6px}
+.row{display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:center}
+.row label{font-size:13.5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.row input{width:100%;font:500 14px var(--mono);padding:6px 8px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--fg);text-align:right}
+.seg.yr{flex-wrap:wrap;max-width:100%}
+.seg.yr button{padding:7px 12px;font-family:var(--mono);font-size:13px}
+.warn{margin:0;border-left:3px solid var(--c-con);padding:10px 14px;background:var(--asm);border-radius:0;font-size:13.5px}
+th.sel,td.sel{background:var(--disc)}
+.notes{display:grid;gap:10px;max-width:78ch}
+.notes p{margin:0}
+.callout{border-left:3px solid var(--c-con);padding:10px 14px;background:var(--asm);color:var(--fg);border-radius:0}
+.small{font-size:12.5px;color:var(--muted)}
+@media (max-width:760px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.row{grid-template-columns:1fr 96px}}
+@media (prefers-reduced-motion:no-preference){.seg button{transition:background .15s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">ASX:EMV · Investor presentation, 13 Nov 2026 · Fiscal years end 30 June</div>
+    <h1>EMV Revenue Model</h1>
+    <p class="lede">Revenue build from the first disclosed pricing: emu capital sales, per-scan consumables and servicing, then First Responder and software upgrades. Pricing marked <span class="chip d">Disclosed</span> comes from the deck. Everything marked <span class="chip a">Assumption</span> is mine and is where the model is actually decided.</p>
+  </header>
+
+  <div class="bar">
+    <div class="seg" role="group" aria-label="Scenario">
+      <button type="button" id="sc-bear" data-sc="bear" aria-pressed="false">Bear</button>
+      <button type="button" id="sc-base" data-sc="base" aria-pressed="true">Base</button>
+      <button type="button" id="sc-bull" data-sc="bull" aria-pressed="false">Bull</button>
+      <button type="button" id="sc-partner" data-sc="partner" aria-pressed="false">Partner launch</button>
+    </div>
+    <span class="small" id="scDesc"></span>
+  </div>
+
+  <div class="bar"><div class="seg yr" role="group" aria-label="Year shown on the cards" id="yrSeg"></div><span class="small">Cards and value per share follow the selected year</span></div>
+  <p class="warn" id="warn" hidden></p>
+  <section class="tiles" aria-label="Summary">
+    <div class="tile"><span class="k" id="t1k">Revenue</span><span class="v" id="t1"></span><span class="s" id="t1s"></span></div>
+    <div class="tile"><span class="k" id="t2k">Gross profit</span><span class="v" id="t2"></span><span class="s" id="t2s"></span></div>
+    <div class="tile"><span class="k">Recurring share</span><span class="v" id="t3"></span><span class="s">consumables + service + software</span></div>
+    <div class="tile"><span class="k">emu installed base</span><span class="v" id="t4"></span><span class="s" id="t4s"></span></div>
+  </section>
+
+  <section class="card" aria-label="Revenue chart">
+    <div class="bar"><h2>Revenue by stream, A$M</h2>
+      <div class="legend-key">
+        <span><i class="sw" style="background:var(--c-cap)"></i>emu capital</span>
+        <span><i class="sw" style="background:var(--c-svc)"></i>emu servicing</span>
+        <span><i class="sw" style="background:var(--c-con)"></i>emu consumables</span>
+        <span><i class="sw" style="background:var(--c-fr)"></i>First Responder</span>
+        <span><i class="sw" style="background:var(--c-sw)"></i>Software</span>
+      </div></div>
+    <div class="chartwrap"><svg id="chart" viewBox="0 0 900 300" width="100%" role="img" aria-label="Stacked revenue by year"></svg></div>
+  </section>
+
+  <section class="card" aria-label="Annual table">
+    <h2>Annual build</h2>
+    <div class="tablewrap"><table id="tbl"></table></div>
+    <p class="small">US$ figures converted at the AUD/USD rate below. Gross profit uses the assumed unit costs and margins. Excludes opex, so this is not earnings.</p>
+  </section>
+
+  <section class="inputs" aria-label="Model inputs">
+    <fieldset><legend>emu timing and volume</legend>
+      <div class="row"><label for="launch">First sales year (FY) <span class="chip a">Assumption</span></label><input id="launch" type="number" step="1"></div>
+      <div class="row"><label for="lo">Launch contract, extra units <span class="chip a">Assumption</span></label><input id="lo" type="number" step="5"></div>
+      <div class="row"><label for="y1">Units sold, launch year <span class="chip a">Assumption</span></label><input id="y1" type="number" step="1"></div>
+      <div class="row"><label for="g">Unit growth per year, % <span class="chip a">Assumption</span></label><input id="g" type="number" step="5"></div>
+      <div class="row"><label for="cap">Line capacity at launch, units/yr <span class="chip d">Disclosed</span></label><input id="cap" type="number" step="10"></div>
+      <div class="row"><label for="capstep">Capacity added each year <span class="chip a">Assumption</span></label><input id="capstep" type="number" step="10"></div>
+      <p class="small">Disclosed: ~50/yr now, ~150/yr with modest staff, storage and warehousing additions. Above 150 implies a facility expansion or contract manufacturing.</p>
+    </fieldset>
+
+    <fieldset><legend>emu pricing and usage</legend>
+      <div class="row"><label for="asp">Device price, US$k <span class="chip d">Disclosed</span></label><input id="asp" type="number" step="5"></div>
+      <div class="row"><label for="cpp">Consumable per scan, US$ <span class="chip d">Disclosed</span></label><input id="cpp" type="number" step="1"></div>
+      <div class="row"><label for="svc">Servicing, % of price per year <span class="chip d">Disclosed</span></label><input id="svc" type="number" step="1"></div>
+      <div class="row"><label for="spd">Scans per device per day <span class="chip a">Assumption</span></label><input id="spd" type="number" step="0.25"></div>
+      <p class="small">Range given: US$150 to 200k. Scans per day blends busy stroke centres (3+) with critical access hospitals (well under 1).</p>
+    </fieldset>
+
+    <fieldset><legend>First Responder</legend>
+      <div class="row"><label for="frlag">Years after emu launch <span class="chip a">Assumption</span></label><input id="frlag" type="number" step="1"></div>
+      <div class="row"><label for="fry1">Units sold, first year <span class="chip a">Assumption</span></label><input id="fry1" type="number" step="5"></div>
+      <div class="row"><label for="frg">Unit growth per year, % <span class="chip a">Assumption</span></label><input id="frg" type="number" step="10"></div>
+      <div class="row"><label for="frasp">Device price, US$k <span class="chip d">Disclosed</span></label><input id="frasp" type="number" step="5"></div>
+      <div class="row"><label for="frcpp">Consumable per scan, US$ <span class="chip d">Disclosed</span></label><input id="frcpp" type="number" step="5"></div>
+      <div class="row"><label for="frspd">Scans per unit per day <span class="chip a">Assumption</span></label><input id="frspd" type="number" step="0.1"></div>
+      <p class="small">Range given: US$50 to 100k, 10% servicing. 510(k) with emu as predicate, so it trails emu clearance.</p>
+    </fieldset>
+
+    <fieldset><legend>Software upgrades</legend>
+      <div class="row"><label for="swfy">First year (FY) <span class="chip a">Assumption</span></label><input id="swfy" type="number" step="1"></div>
+      <div class="row"><label for="swfee">Annual fee per emu, US$k <span class="chip a">Assumption</span></label><input id="swfee" type="number" step="1"></div>
+      <div class="row"><label for="swup">Share of base that pays, % <span class="chip a">Assumption</span></label><input id="swup" type="number" step="5"></div>
+      <p class="small">The deck names paid upgrades (TBI, new features) but gives no pricing. Set the fee to 0 to exclude.</p>
+    </fieldset>
+
+    <fieldset><legend>Costs and currency</legend>
+      <div class="row"><label for="ucost">emu unit cost, US$k <span class="chip a">Assumption</span></label><input id="ucost" type="number" step="5"></div>
+      <div class="row"><label for="frcost">FR unit cost, US$k <span class="chip a">Assumption</span></label><input id="frcost" type="number" step="5"></div>
+      <div class="row"><label for="cgm">Consumables gross margin, % <span class="chip a">Assumption</span></label><input id="cgm" type="number" step="5"></div>
+      <div class="row"><label for="sgm">Servicing gross margin, % <span class="chip a">Assumption</span></label><input id="sgm" type="number" step="5"></div>
+      <div class="row"><label for="fx">AUD/USD <span class="chip a">Assumption</span></label><input id="fx" type="number" step="0.01"></div>
+      <p class="small">No cost of goods has been disclosed. Unit costs here assume a typical medical capital device margin.</p>
+    </fieldset>
+
+    <fieldset><legend>Illustrative value per share</legend>
+      <div class="row"><label for="mult">EV / revenue multiple <span class="chip a">Assumption</span></label><input id="mult" type="number" step="0.5"></div>
+      <div class="row"><label for="disc">Discount rate, % per year <span class="chip a">Assumption</span></label><input id="disc" type="number" step="1"></div>
+      <div class="row"><label for="dil">Future dilution, % <span class="chip a">Assumption</span></label><input id="dil" type="number" step="5"></div>
+      <div class="row"><label>Value per share today</label><span id="vps" style="font:600 18px var(--display);text-align:right;font-variant-numeric:tabular-nums"></span></div>
+      <p class="small" id="vpsNote"></p>
+    </fieldset>
+  </section>
+
+  <section class="card notes" aria-label="Reading the model">
+    <h2>Reading the model</h2>
+    <p class="callout" id="insight"></p>
+    <p>Servicing at 10% of a US$175k device is about US$17.5k a year per installed unit. Consumables at US$25 a scan only match that above roughly two scans a day, every day. The two recurring streams end up similar in size and both small, so for the rest of the decade this is mostly a capital equipment business. First Responder grows into the largest single line in the base case, but it is also the furthest from clearance and the least evidenced.</p>
+    <p>The deck's US$7.5 to 30M device revenue figures are line capacity times price, with the company's note that they are not a forecast. Selling 150 units a year into roughly 800 Stroke Belt targets means reaching about a fifth of them every year. No early medtech capital launch does that in its first two years, which is why the ramp, not the price, drives every number here.</p>
+    <p>Not included: reimbursement outcomes (NTAP excludes capital cost), sales force and operating costs, the time hospitals take to approve capital purchases, international sales, or the 2027 readout failing. Nothing here is a forecast or advice.</p>
+  </section>
+</div>
+
+<script>
+const YEARS=[2028,2029,2030,2031,2032,2033,2034,2035];
+let selYear=2033;
+const SC={
+  bear:{desc:"Clearance slips, FY30 first sales, slow uptake, capacity stays modest",launch:2030,lo:0,y1:5,g:80,cap:50,capstep:20,asp:150,cpp:25,svc:10,spd:0.75,frlag:3,fry1:15,frg:80,frasp:50,frcpp:50,frspd:0.4,swfy:2034,swfee:0,swup:0,ucost:60,frcost:25,cgm:70,sgm:45,fx:0.65,mult:3,disc:30,dil:40},
+  base:{desc:"Clearance mid 2028, FY29 first sales of 40, line adds 50 units of capacity a year",launch:2029,lo:0,y1:40,g:80,cap:50,capstep:50,asp:175,cpp:25,svc:10,spd:1.5,frlag:2,fry1:30,frg:100,frasp:75,frcpp:50,frspd:0.7,swfy:2032,swfee:5,swup:40,ucost:55,frcost:25,cgm:75,sgm:55,fx:0.65,mult:5,disc:25,dil:25},
+  bull:{desc:"Clean readout, full current line (50) sold in year one, dual indication, line expanded past 150",launch:2029,lo:0,y1:50,g:100,cap:50,capstep:100,asp:200,cpp:25,svc:10,spd:2.5,frlag:2,fry1:60,frg:120,frasp:100,frcpp:50,frspd:1,swfy:2031,swfee:10,swup:60,ucost:50,frcost:22,cgm:80,sgm:60,fx:0.65,mult:7,disc:20,dil:20},
+  partner:{desc:"Your case: big network orders on clearance, fast production scale-up through partners",launch:2029,lo:60,y1:60,g:90,cap:120,capstep:150,asp:200,cpp:25,svc:10,spd:2.5,frlag:2,fry1:100,frg:100,frasp:100,frcpp:50,frspd:1,swfy:2031,swfee:10,swup:60,ucost:50,frcost:22,cgm:80,sgm:60,fx:0.65,mult:7,disc:20,dil:20}
+};
+const KEYS=Object.keys(SC.base).filter(k=>k!=="desc");
+const SHARES=92.96;
+let cur="base";
+const $=id=>document.getElementById(id);
+
+function load(sc){cur=sc;const s=SC[sc];KEYS.forEach(k=>$(k).value=s[k]);
+  document.querySelectorAll(".seg button[data-sc]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.sc===sc));
+  $("scDesc").textContent=s.desc;calc();}
+function v(k){const x=parseFloat($(k).value);return isNaN(x)?0:x}
+
+function ramp(start,y1,g,cap,year){if(year<start)return 0;const n=year-start;return Math.round(Math.min(cap,y1*Math.pow(1+g/100,n)))}
+
+function calc(){
+  const p={};KEYS.forEach(k=>p[k]=v(k));
+  const fx=p.fx||0.65, frStart=p.launch+p.frlag;
+  let base=0,frBase=0,maxCap=0;const rows=[];
+  // run from launch year even if earlier than table, so installed base is right
+  for(let y=Math.min(p.launch,YEARS[0]);y<=YEARS[YEARS.length-1];y++){
+    const capY=y<p.launch?0:p.cap+p.capstep*(y-p.launch); if(capY>maxCap)maxCap=capY;
+    const u=Math.min(capY, ramp(p.launch,p.y1,p.g,1e9,y)+(y===p.launch?p.lo:0)), prev=base; base+=u;
+    const fu=ramp(frStart,p.fry1,p.frg,100000,y), fprev=frBase; frBase+=fu;
+    const avg=prev+u/2, favg=fprev+fu/2;
+    const cap=u*p.asp/1000;                         // US$M
+    const svc=prev*p.asp*p.svc/100/1000;            // year-1 under warranty
+    const scans=avg*p.spd*365;
+    const con=scans*p.cpp/1e6;
+    const frCap=fu*p.frasp/1000, frSvc=fprev*p.frasp*p.svc/100/1000, frCon=favg*p.frspd*365*p.frcpp/1e6;
+    const fr=frCap+frSvc+frCon;
+    const sw=y>=p.swfy?prev*p.swup/100*p.swfee/1000:0;
+    const tot=cap+svc+con+fr+sw;
+    const gp=u*(p.asp-p.ucost)/1000 + svc*p.sgm/100 + con*p.cgm/100 + fu*(p.frasp-p.frcost)/1000 + frSvc*p.sgm/100 + frCon*p.cgm/100 + sw*0.95;
+    if(YEARS.includes(y))rows.push({y,u,capY,base,scans,cap,svc,con,fr,frU:fu,frBase,sw,tot,gp});
+  }
+  const A=x=>x/fx; // US$M -> A$M
+  p.maxCap=maxCap;render(rows,p,A,fx);
+}
+
+const fm=x=>x>=100?x.toFixed(0):x>=10?x.toFixed(1):x.toFixed(2);
+const fA=x=>"A$"+fm(x)+"M";
+
+function render(rows,p,A,fx){
+  const w=$("warn");
+  if(p.launch<2029){w.hidden=false;w.textContent="FY28 sales need FDA clearance before 30 June 2028. The company guides readout mid CY27 and De Novo submission H2 CY27, and De Novo reviews usually run 6 to 12 months, so US sales in FY28 are not on the company's own timeline.";}
+  else if(p.maxCap>150){w.hidden=false;w.textContent="Line capacity above 150 a year goes beyond the disclosed line capacity and implies a facility expansion or contract manufacturing that the company has not announced.";}
+  else w.hidden=true;
+  const last=rows[rows.length-1];
+  const vy=rows.find(r=>r.y===selYear)||last;
+  $("t1k").textContent="FY"+String(vy.y).slice(2)+" revenue";
+  $("t1").textContent=fA(A(vy.tot));$("t1s").textContent="US$"+fm(vy.tot)+"M";
+  $("t2k").textContent="FY"+String(vy.y).slice(2)+" gross profit";
+  $("t2").textContent=fA(A(vy.gp));$("t2s").textContent=(vy.tot?Math.round(vy.gp/vy.tot*100):0)+"% gross margin";
+  const rec=vy.svc+vy.con+vy.sw+(vy.fr? (vy.fr - vy.frU*p.frasp/1000):0);
+  $("t3").textContent=(vy.tot?Math.round(rec/vy.tot*100):0)+"%";
+  $("t4").textContent=vy.base.toLocaleString();$("t4s").textContent="end FY"+String(vy.y).slice(2)+" · targets: 800 Stroke Belt, 10,200 US";
+
+  // table
+  const yrs=rows.map(r=>"FY"+String(r.y).slice(2));
+  const line=(lab,f,cls)=>`<tr class="${cls||""}"><td>${lab}</td>${rows.map(r=>`<td class="${r.y===selYear?"sel":""}">${f(r)}</td>`).join("")}</tr>`;
+  const n0=x=>Math.round(x).toLocaleString(), m=x=>fm(A(x));
+  $("tbl").innerHTML=`<thead><tr><th></th>${rows.map((r,i)=>`<th class="${r.y===selYear?"sel":""}">${yrs[i]}</th>`).join("")}</tr></thead><tbody>
+  <tr class="grp"><td colspan="9">Volumes</td></tr>
+  ${line("emu line capacity",r=>n0(r.capY),"sub")}
+  ${line("emu units sold",r=>n0(r.u))}
+  ${line("emu installed base",r=>n0(r.base),"sub")}
+  ${line("emu scans",r=>n0(r.scans),"sub")}
+  ${line("First Responder units sold",r=>n0(r.frU))}
+  <tr class="grp"><td colspan="9">Revenue, A$M</td></tr>
+  ${line("emu capital",r=>m(r.cap))}
+  ${line("emu servicing",r=>m(r.svc))}
+  ${line("emu consumables",r=>m(r.con))}
+  ${line("First Responder",r=>m(r.fr))}
+  ${line("Software",r=>m(r.sw))}
+  ${line("Total revenue",r=>m(r.tot),"total")}
+  ${line("Gross profit",r=>m(r.gp),"sub")}
+  </tbody>`;
+
+  // chart
+  const W=900,H=300,L=52,R=12,T=16,B=34,iw=W-L-R,ih=H-T-B;
+  const max=Math.max(...rows.map(r=>A(r.tot)),1);
+  const step=niceStep(max/4), top=Math.ceil(max/step)*step;
+  const y=v=>T+ih-(v/top)*ih, bw=iw/rows.length*0.56;
+  let s="";
+  for(let t=0;t<=top+1e-9;t+=step){s+=`<line x1="${L}" x2="${W-R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${L-8}" y="${y(t)+4}" text-anchor="end">${t%1?t.toFixed(1):t}</text>`;}
+  const keys=[["cap","--c-cap"],["svc","--c-svc"],["con","--c-con"],["fr","--c-fr"],["sw","--c-sw"]];
+  rows.forEach((r,i)=>{const cx=L+iw/rows.length*(i+.5);let acc=0;
+    keys.forEach(([k,c])=>{const val=A(r[k]);if(val<=0)return;const y0=y(acc),y1=y(acc+val);s+=`<rect x="${cx-bw/2}" y="${y1}" width="${bw}" height="${Math.max(0,y0-y1)}" fill="var(${c})"><title>${yrs[i]} ${k}: A$${fm(val)}M</title></rect>`;acc+=val;});
+    s+=`<text x="${cx}" y="${H-12}" text-anchor="middle" style="${r.y===selYear?"fill:var(--fg);font-weight:600":""}">${yrs[i]}</text>`;
+    if(acc>0)s+=`<text x="${cx}" y="${y(acc)-6}" text-anchor="middle" style="fill:var(--fg);font-weight:500">${fm(acc)}</text>`;
+  });
+  $("chart").innerHTML=s;
+
+  // valuation
+  const t=(vy.y-0.5)-2026.9; // years from now to mid-FY
+  const ev=A(vy.tot)*p.mult/Math.pow(1+p.disc/100,Math.max(0,t));
+  const sh=SHARES*(1+p.dil/100);
+  $("vps").textContent="A$"+(ev/sh).toFixed(2);
+  $("vpsNote").textContent=`FY${String(vy.y).slice(2)} revenue A$${fm(A(vy.tot))}M × ${p.mult}x, discounted ${t.toFixed(1)} years at ${p.disc}%, over ${sh.toFixed(0)}M shares (92.96M today plus ${p.dil}% dilution). Ignores cash and the probability the readout fails.`;
+
+  // insight
+  const r0=rows.find(r=>r.u>0)||rows[0];
+  const conShare=vy.tot?vy.con/vy.tot*100:0, svcShare=vy.tot?vy.svc/vy.tot*100:0;
+  $("insight").textContent=`In FY${String(vy.y).slice(2)} consumables are ${conShare.toFixed(0)}% of revenue and servicing ${svcShare.toFixed(0)}%. Each installed emu earns about US$${(p.spd*365*p.cpp/1000).toFixed(1)}k a year in consumables against US$${(p.asp*p.svc/100).toFixed(1)}k in servicing. The per-scan price is too low for consumables to carry the business, so unit sales and installed base decide the result.`;
+}
+function niceStep(x){const p=Math.pow(10,Math.floor(Math.log10(x||1))),n=x/p;return (n<=1?1:n<=2?2:n<=5?5:10)*p}
+
+KEYS.forEach(k=>$(k).addEventListener("input",calc));
+$("yrSeg").innerHTML=YEARS.map(y=>`<button type="button" id="yr-${y}" data-y="${y}" aria-pressed="${y===selYear}">FY${String(y).slice(2)}</button>`).join("");
+document.querySelectorAll("#yrSeg button").forEach(b=>b.addEventListener("click",()=>{selYear=+b.dataset.y;document.querySelectorAll("#yrSeg button").forEach(x=>x.setAttribute("aria-pressed",+x.dataset.y===selYear));calc();}));
+document.querySelectorAll(".seg button[data-sc]").forEach(b=>b.addEventListener("click",()=>load(b.dataset.sc)));
+load("base");
+</script>
